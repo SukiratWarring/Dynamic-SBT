@@ -3,16 +3,20 @@ import { ethers } from "ethers";
 import abi from "../sbt.json";
 import "./Displaying.css";
 import { LoaderContext } from "../context/loader";
-
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 function DisplayNfts({ receipt }) {
   const [nft, setNfts] = useState("");
   const { setLoader } = useContext(LoaderContext);
+  const [show, setShow] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
   useEffect(() => {
     fetchingNfts();
   }, []);
   useEffect(() => {
     setLoader(true);
-    setNfts("");
     fetchingNfts();
   }, [receipt]);
   const fetchingNfts = async () => {
@@ -29,16 +33,12 @@ function DisplayNfts({ receipt }) {
         method: "eth_requestAccounts",
       });
       const balance = Number(await contractInstance.balanceOf(accounts[0]));
-      console.log("balance", balance);
       for (var i = 0; i < balance; i++) {
         const tokenid = await contractInstance.tokenOfOwnerByIndex(
           accounts[0],
           i
         );
-        console.log("tokenid", tokenid);
-
         const tokenUri = await contractInstance.tokenURI(tokenid);
-        console.log("tokenUri", tokenUri);
         const meta = await fetch(tokenUri);
         const result = await meta.json();
         tokens.push({ tokenid, tokenUri, result });
@@ -47,6 +47,8 @@ function DisplayNfts({ receipt }) {
       setNfts(tokens);
       setLoader(false);
     } catch (error) {
+      setErrorMsg("Error While fetching Nft(s)");
+      handleShow();
       console.log("error", error);
     }
   };
@@ -79,6 +81,17 @@ function DisplayNfts({ receipt }) {
             );
           })
         : "No Nfts minted/found Yet !"}
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Error Occured</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{errorMsg}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

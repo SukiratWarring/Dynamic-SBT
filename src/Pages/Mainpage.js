@@ -5,7 +5,8 @@ import abi from "../sbt.json";
 import { ethers } from "ethers";
 import DisplayNfts from "./Displaypage";
 import { LoaderContext } from "../context/loader";
-
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 function Mainpage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -15,12 +16,14 @@ function Mainpage() {
   const [receipt, setReceipt] = useState("");
   const [mint, setMint] = useState(true);
   const { setLoader } = useContext(LoaderContext);
-
+  const [errorMsg, setErrorMsg] = useState("");
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
   useEffect(() => {
     checkBalance();
   }, []);
   useEffect(() => {
-    console.log("RUNNING");
     checkBalance();
   }, [receipt]);
   const checkBalance = async () => {
@@ -34,7 +37,6 @@ function Mainpage() {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
-    console.log("accounts", accounts[0]);
     const balance = Number(await contractInstance.balanceOf(accounts[0]));
     setBalance(balance);
   };
@@ -52,42 +54,35 @@ function Mainpage() {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-      console.log("accounts", accounts[0]);
       if (tokenid != null) {
-        console.log("tokenid", tokenid);
-
-        console.log("inside");
-
         const tx = await contractInstance.changeTokenUri(tokenid, uri, {
           gasLimit: 5000000,
         });
         const receipt = await tx.wait();
-        // setinvoiceData(receipt);
         setReceipt(receipt);
         setLoader(false);
         console.log("receipt", receipt);
       } else {
-        console.log("accounts[0]", accounts[0]);
+        console.log("Minitng");
 
         const tx = await contractInstance.safeMint(accounts[0], uri, {
           gasLimit: 5000000,
         });
         const receipt = await tx.wait();
-        // setinvoiceData(receipt);
-        // onOpen();
-        // setLoader(false);
+
         setReceipt(receipt);
         console.log("receipt", receipt);
       }
     } catch (error) {
       setLoader(false);
+      setErrorMsg("Error while minting nft !");
+      handleShow();
       console.log("error", error);
     }
   };
   const handleSubmit = (e) => {
     setLoader(true);
     e.preventDefault();
-    console.log("name,address,country", name, address, country, tokenid);
     const data = {
       pinataOptions: {
         cidVersion: 1,
@@ -132,10 +127,13 @@ function Mainpage() {
     axios(config)
       .then((res) => {
         console.log(res.data.IpfsHash);
+
         mintNft(res.data.IpfsHash, tokenid);
       })
       .catch((err) => {
         setLoader(false);
+        setErrorMsg("Error while uploading to pinata !");
+        handleShow();
         console.log("err", err);
       });
   };
@@ -144,6 +142,7 @@ function Mainpage() {
   };
   const toggle_2 = () => {
     setMint(true);
+    setTokenid(null);
   };
   return (
     <div>
@@ -197,6 +196,7 @@ function Mainpage() {
                 >
                   Mint
                 </button>
+
                 {balance > 0 ? (
                   <button class="btn btn-secondary" onClick={toggle}>
                     Edit
@@ -247,7 +247,6 @@ function Mainpage() {
                   placeholder="country.."
                   onChange={(e) => {
                     setCountry(e.target.value);
-                    console.log("country", country);
                   }}
                 />
               </div>
@@ -284,6 +283,17 @@ function Mainpage() {
       <div className="container">
         {balance > 0 ? <DisplayNfts receipt={receipt} /> : ""}
       </div>
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Error Occured</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{errorMsg}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

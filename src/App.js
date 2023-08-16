@@ -5,11 +5,16 @@ import "./Pages/Mainpage.css";
 import "./App.css";
 import Spinner from "./components/Loader/index.js";
 import { LoaderContext } from "./context/loader.js";
-
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 function App() {
   const [haveMetamask, sethaveMetamask] = useState(true);
   const [accountAddress, setAccountAddress] = useState("");
   const [isConnected, setIsConnected] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
   const { ethereum } = window;
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -17,28 +22,31 @@ function App() {
     if (window.ethereum) {
       try {
         const mumbaiTestnet = {
-          chainId: "0x13881", // Mumbai Testnet Chain ID
-          chainName: "Mumbai Testnet", // Chain Name
+          chainId: "0x35B61", //  Chain ID
+          chainName: "June Testnet", // Chain Name
           nativeCurrency: {
-            name: "MATIC",
-            symbol: "MATIC",
+            name: "JUNE",
+            symbol: "JUNE",
             decimals: 18,
           },
-          rpcUrls: ["https://rpc-mumbai.maticvigil.com"], // Mumbai Testnet RPC URL
-          blockExplorerUrls: ["https://explorer-mumbai.maticvigil.com"], // Mumbai Testnet Block Explorer URL
+          rpcUrls: ["https://api.socotra-test.network:9650/ext/bc/JUNE/rpc"], // RPC URL
+          blockExplorerUrls: [
+            "https://mcnscan.io/chain/NLp7mU4yqN9xfu3Yezc6Sq66xFx5E1bKaxsBZRBZ7N7FmKhb5/",
+          ], // Block Explorer URL
         };
 
         await window.ethereum.request({
           method: "wallet_addEthereumChain",
           params: [mumbaiTestnet],
         });
-
-        console.log("Mumbai Testnet added to MetaMask");
       } catch (error) {
-        console.error("Error adding Mumbai Testnet:", error);
+        setErrorMsg(error.message);
+        handleShow();
+        process.exit();
       }
     } else {
-      console.error("MetaMask not detected");
+      setErrorMsg("MetaMask not detected");
+      handleShow();
     }
   }
   useEffect(() => {
@@ -52,20 +60,18 @@ function App() {
     checkMetamaskAvailability();
   }, []);
   const SwitchChainToPolygon = async () => {
-    // if (typeof ethereum !== "undefined" && ethereum.isMetaMask) return;
-    console.log("22");
-
     try {
       await ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x13881" }],
+        params: [{ chainId: "0x35B61" }],
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
         // You can make a request to add the chain to wallet here
         await addMumbaiTestnet();
-        console.log("Mumbai test net is not added ,please add !");
       } else {
+        setErrorMsg(switchError.message);
+        handleShow();
         process.exit();
       }
     }
@@ -77,9 +83,7 @@ function App() {
         sethaveMetamask(false);
       }
       const chain = (await provider.getNetwork()).chainId;
-      if (chain !== "8001") {
-        console.log("here");
-
+      if (chain !== "220001") {
         await SwitchChainToPolygon();
       }
       const accounts = await ethereum.request({
@@ -88,6 +92,8 @@ function App() {
       setAccountAddress(accounts[0]);
       setIsConnected(true);
     } catch (error) {
+      setErrorMsg(error.message);
+      handleShow();
       setIsConnected(false);
     }
   };
@@ -125,6 +131,17 @@ function App() {
                       </button>
                     </div>
                   </div>
+                  <Modal show={show} onHide={handleClose}>
+                    <Modal.Header closeButton>
+                      <Modal.Title>Error Occured</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>{errorMsg}</Modal.Body>
+                    <Modal.Footer>
+                      <Button variant="secondary" onClick={handleClose}>
+                        Close
+                      </Button>
+                    </Modal.Footer>
+                  </Modal>
                 </div>
               )}
             </div>
