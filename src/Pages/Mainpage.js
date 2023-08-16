@@ -64,8 +64,12 @@ function Mainpage() {
         console.log("receipt", receipt);
       } else {
         console.log("Minitng");
+        console.log(
+          "ethers.utils.isAddress(address)",
+          ethers.utils.isAddress(address)
+        );
 
-        const tx = await contractInstance.safeMint(accounts[0], uri, {
+        const tx = await contractInstance.safeMint(address, uri, {
           gasLimit: 5000000,
         });
         const receipt = await tx.wait();
@@ -74,9 +78,15 @@ function Mainpage() {
         console.log("receipt", receipt);
       }
     } catch (error) {
-      setLoader(false);
-      setErrorMsg("Error while minting nft !");
-      handleShow();
+      if (!ethers.utils.isAddress(address)) {
+        setLoader(false);
+        setErrorMsg("Please Set a valid address!");
+        handleShow();
+      } else {
+        setLoader(false);
+        setErrorMsg("Error while minting nft !");
+        handleShow();
+      }
       console.log("error", error);
     }
   };
