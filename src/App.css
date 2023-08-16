@@ -22,12 +22,35 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .App-link {
   color: #61dafb;
 }
+.connection-img{
+  padding: 10px;
+  border-radius: 10%;
+}
+.img-fluid{
+  border-radius: 1%;
+  padding: 10px;
+}
+.card{
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 50%;
+
+}
+.outside{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
